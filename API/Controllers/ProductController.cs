@@ -16,9 +16,10 @@ namespace API.Controllers
       
 
         [HttpGet]   
-        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts()
+        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts(string ? brand , string? type ,string? sort)
         {
-           return Ok(await productRepository.GetProductsAsync());
+           
+           return Ok(await productRepository.GetProductsAsync(brand ,type ,sort));
         }
 
         [HttpGet("{id}")]
@@ -58,6 +59,23 @@ namespace API.Controllers
             await productRepository.SaveChangesAsync();
             return NoContent();
         }
+
+        [HttpGet("brands")]
+        public async Task<ActionResult<IReadOnlyList<string>>> GetProdcutBrands()
+        {
+           var result = await productRepository.GetProdcutBrandsAsync();
+
+           return Ok(result);
+        }
+
+         [HttpGet("types")]
+        public async Task<ActionResult<IReadOnlyList<string>>> GetProdctTypes()
+        {
+           var result = await productRepository.GetProdcutTypeAsync();
+
+           return Ok(result);
+        }
+
 
 
 

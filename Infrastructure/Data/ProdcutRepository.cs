@@ -1,4 +1,5 @@
 using System;
+using System.Security.Cryptography.X509Certificates;
 using Core.Entities;
 using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -20,14 +21,44 @@ public class ProdcutRepository(StoreContext storeContext) : IProductRepository
         storeContext.Products.Remove(product);
     }
 
+    public async Task<IReadOnlyList<string>> GetProdcutBrandsAsync()
+    {
+       var barnds = await storeContext.Products.Select(x=>x.ProductBrand).Distinct().ToListAsync();
+       return barnds;
+    }
+
+    public async Task<IReadOnlyList<string>> GetProdcutTypeAsync()
+    {
+       var types = await storeContext.Products.Select(x=>x.ProductType).Distinct().ToListAsync();
+       return types;
+    }
+
     public async Task<Product> GetProductByIdAsync(int id)
     {
        return await storeContext.Products.FindAsync(id);
     }
 
-    public async Task<IReadOnlyList<Product>> GetProductsAsync()
+    public async Task<IReadOnlyList<Product>> GetProductsAsync(string? brand , string? types , string? sort)
     {
-       return await storeContext.Products.ToListAsync();
+
+       var query  = storeContext.Products.AsQueryable();
+
+       if(!string.IsNullOrWhiteSpace(brand))
+          query = query.Where(x =>x.ProductBrand ==brand);
+
+
+         if(!string.IsNullOrWhiteSpace(types))
+          query = query.Where(x =>x.ProductType ==types);  
+
+             query = sort switch
+             {
+               "priceAsc" => query.OrderBy(x=>x.Price),
+               "priceDesc" => query.OrderByDescending(x=>x.Price),
+               _ => query.OrderBy(x=>x.Name)
+             };
+         
+
+       return await query.ToListAsync();
     }
 
     public bool ProductExists(int id)
