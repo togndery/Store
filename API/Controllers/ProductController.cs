@@ -1,4 +1,5 @@
 using Core.Entities;
+using Core.Interfaces;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -8,33 +9,29 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductsController : ControllerBase
+    public class ProductsController(IProductRepository productRepository) : ControllerBase
     {
-        private readonly StoreContext storeContext;
+       
 
-        public ProductsController(StoreContext storeContext)
-        {
-            this.storeContext = storeContext;
-        }
+      
 
         [HttpGet]   
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts()
         {
-            var products = await storeContext.Products.ToListAsync();
-            return Ok(products);
+           return Ok(await productRepository.GetProductsAsync());
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
-            return await storeContext.Products.FindAsync(id);
+            return await productRepository.GetProductByIdAsync(id);
         }
 
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct(Product product)
         {
-            storeContext.Products.Add(product);
-            await storeContext.SaveChangesAsync();
+            productRepository.AddProduct(product);
+            await productRepository.SaveChangesAsync();
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
         }
 
@@ -46,8 +43,8 @@ namespace API.Controllers
                 return BadRequest("Could not update product");
             }
 
-            storeContext.Entry(product).State = EntityState.Modified;
-            await storeContext.SaveChangesAsync();
+            productRepository.UpdateProduct(product);
+            await productRepository.SaveChangesAsync();
             return NoContent();
         } 
 
@@ -55,14 +52,10 @@ namespace API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> DeleteProduct(int id)
         {
-            var product = await storeContext.Products.FindAsync(id);
-            if (product == null)
-            {
-                return NotFound("Could not find product");
-            }
+           
 
-            storeContext.Products.Remove(product);
-            await storeContext.SaveChangesAsync();
+            productRepository.DeleteProduct(id);
+            await productRepository.SaveChangesAsync();
             return NoContent();
         }
 
@@ -70,7 +63,7 @@ namespace API.Controllers
 
         private bool ProductExists(int id)
         {
-            return storeContext.Products.Any(e => e.Id == id);
+            return productRepository.ProductExists(id);
         }
 
         
